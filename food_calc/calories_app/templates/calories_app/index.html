@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.4.1/dist/chart.min.js"></script>
+    <title>Document</title>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <nav class="navbar navbar-dark bg-primary">
+                    <span class="navbar-brand">Calories calculator</span>
+                </nav>
+            </div>
+        </div>
+        
+        <br><br>
+
+        <h4>Goal</h4>
+        <br>
+        <div class="row">
+            <div class="col-md-9 offset-1">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped bg-warning" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0"></div>
+                </div>
+            </div>
+        </div>
+        <br><br>
+        <div class="row">
+            <div class="col-md-12">
+                <form method="POST">
+                    <div class="form-group row">
+                        {% csrf_token %}
+                        <label class="col-md-2">
+                            <strong>
+                            Select Aliment
+                            </strong>
+                        </label>
+                        <select class="col-md-6 form-control" name="food_sel" id="food_sel">
+                            {% for aliment in aliments %}
+                            <option value="{{ aliment.name }}">{{ aliment.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-success" type="submit">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div>
+                    <h4>Today's consumption</h4>
+                </div>
+                <table id="table" class="table table-striped table-primary">
+                    <tr class="bg-primary text-white">
+                        <th>Food item</th>
+                        <th>Carbs (gm)</th>
+                        <th>Proteins (gm)</th>
+                        <th>Fats (gm)</th>
+                        <th>Calories (Kcal)</th>
+                        <th>Remove item</th>
+                    </tr>
+                    {% for al_sel in aliments_selected %}
+                        <tr>
+                            <td>{{ al_sel.aliment.name }}</td>
+                            <td>{{ al_sel.aliment.carbs }}</td>
+                            <td>{{ al_sel.aliment.proteins }}</td>
+                            <td>{{ al_sel.aliment.fats }}</td>
+                            <td>{{ al_sel.aliment.calories }}</td>
+                            <td><a class="btn btn-danger" href="{% url 'delete_aliment' al_sel.id %}">Remove</a></td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <td id="total"><strong>Total</strong></td>
+                        <td id="totalCarbs"></td>
+                        <td id="totalProteins"></td>
+                        <td id="totalFats"></td>
+                        <td id="totalCalories"></td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="col-md-5 offset-1">
+                <div class="">
+                    <h4>Today's breakdown</h4>
+                </div>
+                <div class="card-header text-white bg-primary">
+                    <h4>Macronutrients (%)</h4>
+                </div>
+                <div class="col-md-12">
+                    <canvas id="myChart" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+<script>
+    var table = document.getElementById("table");
+    var carbs=0, proteins=0, fats=0, calories=0;
+
+    for(var i=1; i<table.rows.length-1; i++){
+        carbs += parseFloat(table.rows[i].cells[1].innerHTML);
+        proteins += parseFloat(table.rows[i].cells[2].innerHTML);
+        fats += parseFloat(table.rows[i].cells[3].innerHTML);
+        calories += parseInt(table.rows[i].cells[4].innerHTML);
+    }
+    document.getElementById("totalCarbs").innerHTML = '<strong>' + carbs.toFixed(2) + '</strong>';
+    document.getElementById("totalProteins").innerHTML = '<strong>' + proteins.toFixed(2) + '</strong>';
+    document.getElementById("totalFats").innerHTML = '<strong>' + fats.toFixed(2) + '</strong>';
+    document.getElementById("totalCalories").innerHTML = '<strong>' + calories + '</strong>';
+
+    var calPercent = (calories/2000) * 100
+    document.getElementsByClassName("progress-bar")[0].setAttribute("style", "width:"+calPercent+"%")
+
+    var total = carbs + proteins + fats
+    var carbsPer = (carbs/total) * 100
+    var proteinsPer = (proteins/total) * 100
+    var fatsPer = (fats/total) * 100
+    console.log(total)
+
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Carbs', 'Proteins', 'Fats'],
+            datasets: [{
+                label: '% of macronutrients',
+                data: [carbsPer, proteinsPer, fatsPer],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+</html>
